@@ -19,7 +19,7 @@ def start_sirena():
 def is_sirena_stop():
     global gpio
     global time_set
-    if time_set + timedelta(minutes=1) <= datetime.now():
+    if time_set + timedelta(minutes=1) <= datetime.now():  # work for 1 min
         gpio = 0
         GPIO.output(40, 0)
         print(gpio)

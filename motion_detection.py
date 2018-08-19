@@ -47,7 +47,7 @@ def work_on(status):
     timeCheck = datetime.now().strftime('%Ss')
     try:
         while True:
-            status.set_to_work()
+            status.set_to_work()          # set status to 1
             ret, frame = cam.read()	      # read from camera
             totalDiff = cv2.countNonZero(diffImg(t_minus, t, t_plus))	# this is total difference number
             text = "threshold: " + str(totalDiff)				# make a text showing total diff.
