@@ -71,9 +71,9 @@ def email_checker(status):
         lates_email_id = ids[0].split()[-1]
         data = mail.fetch(lates_email_id, '(RFC822)')
         msg = email.message_from_bytes(data[1][0][1])
-        msg_data = get_datetime(msg)
+        msg_date = get_datetime(msg)
         
-        if (msg['Subject'] == 'Get Status') and (status.get_status() == 1) and ('burdin009@gmail.com' in msg['From']): #and (msg_data >= datetime.now() - timedelta(seconds=60))
+        if (msg['Subject'] == 'Get Status') and (status.get_status() == 1) and ('burdin009@gmail.com' in msg['From']) and (msg_date >= datetime.now() - timedelta(seconds=100)):
             addr_from = "mv150512@yandex.ru"                 # Адресат
             addr_to   = "burdin009@gmail.com"                   # Получатель
                                         
