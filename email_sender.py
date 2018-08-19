@@ -9,7 +9,7 @@ from datetime import timedelta, datetime
 import time
 
 login = 'mv150512@yandex.ru'
-password = 'UTRPNAom'
+password = '******'
 
 def get_datetime(msg):
     msg_date = int(msg['Date'][5:7])
