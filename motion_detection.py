@@ -3,6 +3,7 @@ from email_sender import sender, email_checker
 from sirena import *
 import numpy as np		      # importing Numpy for use w/ OpenCV
 import cv2                            # importing Python OpenCV
+import RPi.GPIO as GPIO
 from datetime import datetime         # importing datetime for naming files w/ timestamp
 
 def diffImg(t0, t1, t2):              # Function to calculate difference between images.
@@ -28,11 +29,15 @@ class Status(object):                # for getting status via emal in multiproc
             return self.val.value
 
 initial()
-
+start = False
 status = Status(0)
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(38, GPIO.IN, pull_up_down=GPIO.PUD_UP) # on button
+
+
 
 def work_on(status):
-    global proc_1, proc_2
+    global proc_1, proc_2, start
     threshold = 160000                     # Threshold for triggering "motion detection"             
     cam = cv2.VideoCapture(0)             # Lets initialize capture on webcam
 
@@ -45,27 +50,37 @@ def work_on(status):
     t_plus = cv2.cvtColor(cam.read()[1], cv2.COLOR_RGB2GRAY)
     # Lets use a time check so we only take 1 pic per sec
     timeCheck = datetime.now().strftime('%Ss')
+    def run(pin):
+        global start
+        if start == False:
+            start = True
+        else:
+            start = False
+
+    GPIO.add_event_detect(38,GPIO.RISING,callback=run)
     try:
         while True:
-            status.set_to_work()          # set status to 1
-            ret, frame = cam.read()	      # read from camera
-            totalDiff = cv2.countNonZero(diffImg(t_minus, t, t_plus))	# this is total difference number
-            text = "threshold: " + str(totalDiff)				# make a text showing total diff.
-            cv2.putText(frame, text, (20,40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 2)   # display it on screen
-            is_sirena_stop()
-            if totalDiff > threshold and timeCheck != datetime.now().strftime('%Ss'):
-                start_sirena()
-                dimg= cam.read()[1]
-                cv2.imwrite('avast.jpg', dimg)
-                sender('avast.jpg')
-            timeCheck = datetime.now().strftime('%Ss')
-          # Read next image
-            t_minus = t
-            t = t_plus
-            t_plus = cv2.cvtColor(cam.read()[1], cv2.COLOR_RGB2GRAY)
-            cv2.imshow(winName, frame)
-            if cv2.waitKey(20) & 0xFF == ord('q'):
-                break
+            print(start)
+            if start == True:
+                status.set_to_work()          # set status to 1
+                ret, frame = cam.read()	      # read from camera
+                totalDiff = cv2.countNonZero(diffImg(t_minus, t, t_plus))	# this is total difference number
+                text = "threshold: " + str(totalDiff)				# make a text showing total diff.
+                cv2.putText(frame, text, (20,40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,0), 2)   # display it on screen
+                is_sirena_stop()
+                if totalDiff > threshold and timeCheck != datetime.now().strftime('%Ss'):
+                    start_sirena()
+                    dimg= cam.read()[1]
+                    cv2.imwrite('avast.jpg', dimg)
+                    sender('avast.jpg')
+                timeCheck = datetime.now().strftime('%Ss')
+              # Read next image
+                t_minus = t
+                t = t_plus
+                t_plus = cv2.cvtColor(cam.read()[1], cv2.COLOR_RGB2GRAY)
+                cv2.imshow(winName, frame)
+                if cv2.waitKey(20) & 0xFF == ord('q'):
+                    break
     except KeyboardInterrupt:
         print('End')
     finally:    
@@ -75,6 +90,9 @@ def work_on(status):
         print('close')
         proc_1.terminate()
         proc_2.terminate()
+        
+
+
         
 proc_1 = Process(target=work_on, args=(status,))
 proc_2 = Process(target=email_checker, args=(status,))
